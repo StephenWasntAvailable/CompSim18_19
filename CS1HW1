@@ -14,7 +14,7 @@ def cosx(x):
     return (math.cos(x))
 
 def hsize(x):
-    h = math.pi / (10.0 * (x ** 2))
+    h = math.pi / (10.0 * x)
     return h
 
 def ord2centdiffapprox1(xval,hval):
@@ -35,36 +35,91 @@ def createarrays0to2pi(x):
     return xvalues, numpoints
     
 def calcderivanderror(arrayx, arraysize, h):
-    approxvalues = np.zeros(arraysize)
+    approxvalues1 = np.zeros(arraysize)
+    approxvalues2 = np.zeros(arraysize)
     actualvalues = np.zeros(arraysize)
-    relativeerror = np.zeros(arraysize)
+    relativeerror1 = np.zeros(arraysize)
+    relativeerror2 = np.zeros(arraysize)
     for i in range(arraysize):
-        approxvalues[i] = ord2centdiffapprox1(arrayx[i], h)
+        approxvalues1[i] = ord2centdiffapprox1(arrayx[i], h)
+        approxvalues2[i] = ord2centdiffapprox2(arrayx[i], h)
         actualvalues[i] = ord2diffcosx(arrayx[i])
-        relativeerror[i] = abs( ( actualvalues[i] - approxvalues[i] ) / actualvalues[i] )
-    return approxvalues, actualvalues, relativeerror
-#    plt.plot(arrayx, approxvalues, 'ro')
-#    plt.show()
-#    plt.plot(arrayx, relativeerror, 'bo')
-#    plt.ylim(ymin = 0, ymax = (1.5 * np.amax(relativeerror)))
-#    plt.show()
+        relativeerror1[i] = abs( ( actualvalues[i] - approxvalues1[i] ) / actualvalues[i] )
+        relativeerror2[i] = abs( ( actualvalues[i] - approxvalues2[i] ) / actualvalues[i] )
+    return approxvalues1, approxvalues2, actualvalues, relativeerror1, relativeerror2
     
-def main(x):
-    averror = np.zeros(10000)
-    hvalues = np.zeros(10000)
+def main(x, maxj):
+    averror1 = np.zeros(maxj - 1)
+    averror2 = np.zeros(maxj - 1)
+    hvalues = np.zeros(maxj - 1)
+    errordiff = np.zeros(x)
     xaxis, numpoints = createarrays0to2pi(x)
-    for j in range(1, 10000):
+    for j in range(1, maxj):
         hvalue = hsize(j) 
-        yapprox, yactual, relerror = calcderivanderror(xaxis, numpoints, hvalue)
-        averror[j-1] = np.average(relerror)
+        yapprox1, yapprox2, yactual, relerror1, relerror2 = calcderivanderror(xaxis, numpoints, hvalue)
+        averror1[j-1] = np.average(relerror1)
+        averror2[j-1] = np.average(relerror2)
         hvalues[j-1] = hvalue
-    plt.plot(hvalues, averror, 'ro')
-    plt.xlim(xmin = 0.0, xmax = 0.0000001)
+        #if (j == maxj / 2):
+        #    for i in range(x):
+        #        errordiff[i] = relerror2[i] - relerror1[i]
+        #plt.plot(xaxis, yapprox1, 'ro')
+        #plt.show()
+        #plt.plot(arrayx, relativeerror, 'bo')
+        #plt.ylim(ymin = 0, ymax = (1.5 * np.amax(relativeerror)))
+        #plt.show()
+    plt.figure(1)
+    plt.plot(hvalues, averror1, 'ro')
     plt.grid()
     plt.show()
+    plt.figure(2)
+    plt.loglog(hvalues, averror1)
+    plt.grid()
+    plt.show()
+    plt.figure(3)
+    plt.loglog(hvalues, averror1, label ='Method 1')
+    plt.loglog(hvalues, averror2, label ='Method 2')
+    plt.legend(loc = 4)
+    plt.grid()
+    plt.show()
+    plt.figure(4)
+    plt.plot(xaxis, errordiff, 'ro')
+    plt.show()
+    #plt.plot(arrayx, approxvalues, 'ro')
+    #plt.show()
+    #plt.plot(arrayx, relativeerror, 'bo')
+    #plt.ylim(ymin = 0, ymax = (1.5 * np.amax(relativeerror)))
+    #plt.show()
     
 
-main(50)
+main(200, 5000)
+def subcancelchecklower():
+    absoluteerror = np.zeros(20)
+    hvalues = np.zeros(20)
+    for k in range(1, 21):
+        h = 1 / (k ** 2)
+        hvalues[k-1] = h
+        absoluteerror[k-1] = abs( ord2diffcosx(1.57079) - ord2centdiffapprox1(1.57079, h) )
+    print(absoluteerror)
+    plt.plot(hvalues, absoluteerror, 'ro')
+
+    
+
+def subcancelcheckupper():
+    absoluteerror = np.zeros(20)
+    hvalues = np.zeros(20)
+    for k in range(1, 21):
+        h = 1 / (k ** 2)
+        hvalues[k-1] = h
+        absoluteerror[k-1] = abs( ord2diffcosx(1.57080) - ord2centdiffapprox1(1.57080, h) )
+    print(absoluteerror)
+    plt.plot(hvalues, absoluteerror, 'bo')
+    plt.show()
+        
+subcancelchecklower()
+subcancelcheckupper()
+
+
     
     
 
