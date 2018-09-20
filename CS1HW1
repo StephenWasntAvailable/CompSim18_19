@@ -38,7 +38,7 @@ def ord2centdiffapprox2(xval, hval):
     a3 = a1 + a2
     return a3 / (hval ** 2)
 
-#Analytical value of the 2nd dereivative of cos(X) == -cos(x)
+#Analytical value of the 2nd derivative of cos(X) == -cos(x)
 def ord2diffcosx(x):
     return -1 * math.cos(x)
 
