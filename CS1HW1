@@ -127,8 +127,11 @@ def main(x, maxj):
     plt.grid()
     plt.show()
     plt.figure(7)
+    plt.title('LogLog plot: Both Approximation methods')
     plt.loglog(hvalues, averror1, label ='Method 1')
     plt.loglog(hvalues, averror2, label ='Method 2')
+    plt.xlabel('Step Size: h')
+    plt.ylabel('Approximation of 2nd Derivative')
     plt.legend(loc = 4)
     plt.grid()
     plt.show()
@@ -148,7 +151,7 @@ def main(x, maxj):
     #plt.show()
     
     
-    
+#Checking for subtraction cancellation effect nwhere x -> x' : f(x) - > 0
 def subcancelchecklower():
     absoluteerror = np.zeros(20)
     hvalues = np.zeros(20)
@@ -160,7 +163,7 @@ def subcancelchecklower():
     plt.plot(hvalues, absoluteerror, 'ro')
 
     
-
+#Checking for subtraction cancellation effect nwhere x -> x' : f(x) - > 0
 def subcancelcheckupper():
     absoluteerror = np.zeros(20)
     hvalues = np.zeros(20)
@@ -171,32 +174,38 @@ def subcancelcheckupper():
     print(absoluteerror)
     plt.plot(hvalues, absoluteerror, 'bo')
     plt.show()
-    
+
+#Using accelerated h decrease to show at what point the approximation breaks
+#down due to numerical precision
 def machprectest(x, maxj):
-    averror1 = np.zeros(maxj - 1)
-    averror2 = np.zeros(maxj - 1)
-    hvalues = np.zeros(maxj - 1)
+    #averror1 = np.zeros(maxj - 1)
+    #averror2 = np.zeros(maxj - 1)
+    #hvalues = np.zeros(maxj - 1)
     errordiff = np.zeros(x)
     xaxis, numpoints = createarrays(x)
     for j in range(1, maxj):
         hvalue = hsizefast(j) 
         yapprox1, yapprox2, yactual, relerror1, relerror2, errordiff = calcderivanderror(xaxis, numpoints, hvalue)
-        plt.figure(1)
-        plt.title('Approximation of 2nd Derivative')
-        plt.plot(xaxis, yapprox1, 'ro')
-        plt.xlabel('X')
-        plt.ylabel('[cos(x)]'' Central Difference Approximation')
-        plt.show()
-        plt.figure(2)
-        plt.title('Relative Error compared to Analytical Result')
-        plt.plot(xaxis, relerror1, 'bo')
-        plt.ylim(ymin = 0, ymax = (1.5 * np.amax(relerror1)))
-        plt.xlabel('X')
-        plt.ylabel('Relative Error of Approximation')
-        plt.show()
+        if (j == maxj - 1):
+            plt.figure(9)
+            plt.title('Approximation of 2nd Derivative')
+            plt.plot(xaxis, yapprox1, 'ro')
+            plt.xlabel('X')
+            plt.ylabel('[cos(x)]'' Central Difference Approximation')
+            plt.show()
+            plt.figure(10)
+            plt.title('Relative Error compared to Analytical Result')
+            plt.plot(xaxis, relerror1, 'bo')
+            plt.ylim(ymin = 0, ymax = (1.5 * np.amax(relerror1)))
+            plt.xlabel('X')
+            plt.ylabel('Relative Error of Approximation')
+            plt.show()
+
+#Calling the functions            
 main(100, 10000)       
 subcancelchecklower()
 subcancelcheckupper()
+machprectest(100, 10)
 
 
     
