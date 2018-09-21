@@ -67,6 +67,22 @@ def calcderivanderror(arrayx, arraysize, h):
         errordiff[i] = abs(relativeerror1[i]-relativeerror2[i])
     return approxvalues1, approxvalues2, actualvalues, relativeerror1, relativeerror2, errordiff
 
+#Function that creates some reused plots
+def StandardPlots(x, y, z):
+    plt.figure(1)
+    plt.title('Approximation of 2nd Derivative')
+    plt.plot(x, y, 'r')
+    plt.xlabel('X')
+    plt.ylabel('[cos(x)]'' Central Difference Approximation')
+    plt.show()
+    plt.figure(2)
+    plt.title('Relative Error compared to Analytical Result')
+    plt.plot(x, z, 'b+')
+    plt.ylim(ymin = 0, ymax = (1.5 * np.amax(z)))
+    plt.xlabel('X')
+    plt.ylabel('Relative Error of Approximation')
+    plt.show()
+
 #Main function for producing plots, which calls the previously defined functions
 #Loops through j = 1 to maxj which steadily decreases the step size h for the 
 #approximation
@@ -83,38 +99,39 @@ def main(x, maxj):
         averror2[j-1] = np.average(relerror2)
         hvalues[j-1] = hvalue
         #Plots for given values of j
-        if (j == maxj / 2):
-            plt.figure(1)
-            plt.title('Approximation of 2nd Derivative')
-            plt.plot(xaxis, yapprox1, 'ro')
-            plt.xlabel('X')
-            plt.ylabel('[cos(x)]'' Central Difference Approximation')
-            plt.show()
-            plt.figure(2)
-            plt.title('Relative Error compared to Analytical Result')
-            plt.plot(xaxis, relerror1, 'bo')
-            plt.ylim(ymin = 0, ymax = (1.5 * np.amax(relerror1)))
-            plt.xlabel('X')
-            plt.ylabel('Relative Error of Approximation')
-            plt.show()
-        elif (j == maxj - 1):
-            plt.figure(3)
-            plt.title('Approximation of 2nd Derivative: h very small')
-            plt.plot(xaxis, yapprox1, 'ro')
-            plt.xlabel('X')
-            plt.ylabel('[cos(x)]'' Central Difference Approximation')
-            plt.show()
-            plt.figure(4)
-            plt.plot(xaxis, relerror1, 'bo')
-            plt.ylim(ymin = 0, ymax = (1.5 * np.amax(relerror1)))
-            plt.xlabel('X')
-            plt.ylabel('Relative Error of Approximation')
-            plt.show()
+        if (j == 1):
+            s = str(hvalue)
+            StandardPlots(xaxis, yapprox1, relerror1)
+            print('Value of h: ' + s)
+        elif (j % 10000 == 0):
+            s = str(hvalue)
+            StandardPlots(xaxis, yapprox1, relerror1)
+            print('Value of h: ' + s)
+    minerrortemp = averror1[1]
+    smoothuptemp = abs((averror1[2] - averror1[1]) / averror1[1])
+    smoothdowntemp = abs((averror1[1] - averror1[0]) / averror1[1])
+    indextemp = 1
+    for k in range(2, maxj-2):
+        temp1 = abs((averror1[k+1] - averror1[k]) / averror1[k])
+        temp2 = abs(averror1[k] - averror1[k-1] / averror1[k])
+        if((temp1 <= smoothuptemp and temp2 <= smoothdowntemp) and averror1[k] < minerrortemp):
+            minerrortemp = averror1[k]
+            smoothuptemp = temp1
+            smoothdowntemp = temp2
+            indextemp = k
+        
+    hindexminerror = indextemp
+    minerror = str(minerrortemp)
+    hminerror = str(hsizeslow(hindexminerror + 1))
+    s1 = 'H which produced the lowest* average error: ' + hminerror
+    s2 = 'Minimum* relative average error produced: ' + minerror
+    print(s1)
+    print(s2)
             
 
     plt.figure(5)
     plt.title('Standard Plot: Av. Error against h')
-    plt.plot(hvalues, averror1, 'ro')
+    plt.plot(hvalues, averror1, 'r+')
     plt.xlabel('Step value: h')
     plt.ylabel('Average error in Approximation')
     plt.grid()
@@ -151,28 +168,43 @@ def main(x, maxj):
     #plt.show()
     
     
-#Checking for subtraction cancellation effect nwhere x -> x' : f(x) - > 0
+#Checking for subtraction cancellation effect where x -> x' : f(x) - > 0
 def subcancelchecklower():
-    absoluteerror = np.zeros(20)
+    relerrorl1 = np.zeros(20)
+    relerrorl2 = np.zeros(20)
     hvalues = np.zeros(20)
     for k in range(1, 21):
-        h = 1 / (k ** 2)
+        h = 1 / (k * 10000)
         hvalues[k-1] = h
-        absoluteerror[k-1] = abs( ord2diffcosx(1.57079) - ord2centdiffapprox1(1.57079, h) )
-    print(absoluteerror)
-    plt.plot(hvalues, absoluteerror, 'ro')
+        relerrorl1[k-1] = abs( (ord2diffcosx(1.57079616972) - ord2centdiffapprox1(1.57079616972, h) )/ ord2diffcosx(1.57079616972))
+        relerrorl2[k-1] = abs( (ord2diffcosx(1.57079616972) - ord2centdiffapprox2(1.57079616972, h) )/ ord2diffcosx(1.57079616972))
+    plt.figure(9)
+    plt.title('Relative Error of different approximation constructions')
+    plt.plot(hvalues, relerrorl1, 'r+', label ='Method 1')
+    plt.plot(hvalues, relerrorl2, 'bx', label ='Method 2')
+    plt.xlabel('Value of h: step size')
+    plt.ylabel('Relative Error')
+    plt.legend(loc=1)
+    plt.show()
 
     
-#Checking for subtraction cancellation effect nwhere x -> x' : f(x) - > 0
+#Checking for subtraction cancellation effect where x -> x' : f(x) - > 0
 def subcancelcheckupper():
-    absoluteerror = np.zeros(20)
+    relerroru1 = np.zeros(20)
+    relerroru2 = np.zeros(20)
     hvalues = np.zeros(20)
     for k in range(1, 21):
-        h = 1 / (k ** 2)
+        h = 1 / (k * 1000)
         hvalues[k-1] = h
-        absoluteerror[k-1] = abs( ord2diffcosx(1.57080) - ord2centdiffapprox1(1.57080, h) )
-    print(absoluteerror)
-    plt.plot(hvalues, absoluteerror, 'bo')
+        relerroru1[k-1] = abs( (ord2diffcosx(1.57079648387) - ord2centdiffapprox1(1.57079648387, h) )/ ord2diffcosx(1.57079648387))
+        relerroru2[k-1] = abs( (ord2diffcosx(1.57079648387) - ord2centdiffapprox2(1.57079648387, h) )/ ord2diffcosx(1.57079648387))
+    plt.figure(10)
+    plt.title('Relative Error of different approximation constructions')
+    plt.plot(hvalues, relerroru1, 'r+', label ='Method 1')
+    plt.plot(hvalues, relerroru2, 'bx', label ='Method 2')
+    plt.xlabel('Value of h: step size')
+    plt.ylabel('Relative Error')
+    plt.legend(loc=1)
     plt.show()
 
 #Using accelerated h decrease to show at what point the approximation breaks
@@ -186,23 +218,11 @@ def machprectest(x, maxj):
     for j in range(1, maxj):
         hvalue = hsizefast(j) 
         yapprox1, yapprox2, yactual, relerror1, relerror2, errordiff = calcderivanderror(xaxis, numpoints, hvalue)
-        if (j == maxj - 1):
-            plt.figure(9)
-            plt.title('Approximation of 2nd Derivative')
-            plt.plot(xaxis, yapprox1, 'ro')
-            plt.xlabel('X')
-            plt.ylabel('[cos(x)]'' Central Difference Approximation')
-            plt.show()
-            plt.figure(10)
-            plt.title('Relative Error compared to Analytical Result')
-            plt.plot(xaxis, relerror1, 'bo')
-            plt.ylim(ymin = 0, ymax = (1.5 * np.amax(relerror1)))
-            plt.xlabel('X')
-            plt.ylabel('Relative Error of Approximation')
-            plt.show()
+        if (j % 3 == 0):
+            StandardPlots(xaxis, yapprox1, relerror1)
 
 #Calling the functions            
-main(100, 10000)       
+main(200, 10000)      #
 subcancelchecklower()
 subcancelcheckupper()
 machprectest(100, 10)
