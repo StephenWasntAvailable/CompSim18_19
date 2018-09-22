@@ -174,7 +174,7 @@ def subcancelchecklower():
     relerrorl2 = np.zeros(20)
     hvalues = np.zeros(20)
     for k in range(1, 21):
-        h = 1 / (k * 10000)
+        h = 1 / (k * 1000)
         hvalues[k-1] = h
         relerrorl1[k-1] = abs( (ord2diffcosx(1.57079616972) - ord2centdiffapprox1(1.57079616972, h) )/ ord2diffcosx(1.57079616972))
         relerrorl2[k-1] = abs( (ord2diffcosx(1.57079616972) - ord2centdiffapprox2(1.57079616972, h) )/ ord2diffcosx(1.57079616972))
