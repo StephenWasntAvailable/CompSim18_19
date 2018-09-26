@@ -92,7 +92,7 @@ def varyivaryh(x, kmax, lmax):
     for i in range(kmax-2):
         s = 'Approximation D$_%a $' % (i+2)
         plt.plot(hvalues, approxarray[i], label = s)
-    plt.legend(loc = 2)
+    plt.legend(loc = 3)
     plt.show()
     plt.figure(2)
     plt.title('Relative Error of Approximations at x=2 with varying h')
@@ -107,41 +107,57 @@ def varyivaryh(x, kmax, lmax):
     plt.title('LogLog Plot of Relative Errors')
     plt.xlabel('Step size: h')
     plt.ylabel('Relative Error')
+#    plt.ylim(ymin = 10**(-13),ymax = 10**(-9))
     for i in range(kmax-2):
         s = 'Approximation D$_%a $' % (i+2)
         plt.loglog(hvalues, errorarray[i], label = s)
-    plt.legend(loc = 2)
+    plt.legend(loc = 4)
     plt.show()
+
 
 
 #Function for checking for the effects of rounding errors as h gets smaller
 #x is the x value to evaluate the approximation at
 #k is the order of the Richardson Extrapolation to evaluate the approximation at
-#lmax is the number of h values to check, from 0.4 to 0.4 / lmax ** 2
+#lmax is the number of h values to check, from 0.4 to 0.4 / lmax ** 2 for illustrating how it changes at low h
+#Also used this for finding best approximation, using hval() instead of hvalfast()
 def rounding(x, k, lmax):
     hvalues = np.zeros(lmax - 1)
     for l in range(1, lmax):
-        hvalues[l-1] = hvalfast(l)
+        hvalues[l-1] = hval(l)
+#    for l in range(1, lmax):
+#        hvalues[l-1] = hvalfast(l)
     approxarray, errorarray = varyh(k, lmax, x, hvalues)
+#    plt.figure(4)
+#    plt.plot(hvalues, approxarray, 'x')
+#    plt.ylim(ymin = 29.4, ymax = 29.6)
+#    plt.show()
+    plt.figure(5)
+    plt.plot(hvalues, errorarray, 'x')
+    plt.show()
+    plt.figure(6)
+    plt.title('LogLog plot for illustrating loss of accuracy at small h')
+    plt.ylabel('Relative Error')
+    plt.xlabel('Step size: h')
+    s = 'D$_%d$' % k
+    plt.loglog(hvalues, errorarray, label=s)
+    plt.legend(loc = 2)
+    plt.show()    
+    bestapprox = np.argmin(errorarray)
+    bestapproxvalue = approxarray[bestapprox]
+    s1 = 'Best Approximation for Second Derivative at x=2 : ' + str(bestapproxvalue)
+    s2 = 'Exact value of Second Derivative at x=2 : ' + str(ord2diffexact(x))
+    s3 = 'Relative Error in Approximation : ' + str(errorarray[bestapprox])
+    print(s1)
+    print(s2)
+    print(s3)
     
 
+#varyivaryh(2, 10, 400)
+rounding(2, 5, 322)
 
-varyivaryh(2, 10, 100)
+print("Stephen O'Shea")
+print('SN = 13321762')
     
-#some initial testing of the functions
-#y = richextrap(2, 2, 0.0001)
-#appr1 = ord2centdiffapprox1(2,0.000001)
-#appr2 = ord2centdiffapprox1(2,0.000002)
-#ex = ord2diffexact(2)
-#print(y)
-#print(appr1)
-#print(appr2)
-#print(ex)
-#bigarray = initarrays(5, 10)
-#hvalues = np.zeros(10)
-#for i in range(1,10):
-#    hvalues[i-1] = hval(i)
-#    
-#bigarray[1] = hvalues
-#print(bigarray)
+
     
