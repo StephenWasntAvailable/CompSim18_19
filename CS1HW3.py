@@ -19,13 +19,25 @@ def initialplots():
     plt.show()
     plt.plot(arrayx, logarrayy, 'ro')
     plt.show()
-
+#estimate of equation of line of best fit
+#  ~ -3.5 / 110 = -7/220
+# y = mx + c : y = -7/220*x + c
+# want y = 0 when x ~ 110
+# c = 770/220 = 3.5
+#so y = -7/220 * x + 3.5
+    approxlinex = np.linspace(0, 120, 121)
+    approxliney = np.zeros(len(approxlinex))
+    for i in range(len(approxlinex)):
+        approxliney[i] = ((-7/220) * approxlinex[i]) + 3.5
+    plt.Figure()
+    plt.plot(approxlinex, approxliney, 'b')
+    plt.plot(arrayx, logarrayy, 'ro')
+    plt.show()
     
 initialplots()
 
-#estimate of equation of line of best fit
-#  ~ -3.5 / 115 = -7/230
-# y = mx + c : y = -7/230*x + c
-# want y = 0 when x ~ 130
-# c = 910/230 ~ 4
-#so y = -7/230 * x + 4
+
+
+
+
+    
