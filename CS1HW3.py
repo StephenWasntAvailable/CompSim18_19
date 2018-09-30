@@ -9,18 +9,19 @@ import matplotlib.pyplot as plt
 import math
 import numpy as np
 
-def main():
+def initialplots():
     arrayx = np.array((5,15,25,35,45,55,65,75,85,95,105,115))
     arrayy = np.array((32,17,21,7,8,6,5,3,4,1,5,1))
     logarrayy = np.zeros((len(arrayy)))
     for i in range(len(arrayy)):
         logarrayy[i] = math.log(arrayy[i])
+    plt.plot(arrayx, arrayy, 'bo')
+    plt.show()
     plt.plot(arrayx, logarrayy, 'ro')
     plt.show()
-    plt.loglog(arrayx, arrayy, 'bo')
-    plt.show()
+
     
-main()
+initialplots()
 
 #estimate of equation of line of best fit
 #  ~ -3.5 / 115 = -7/230
