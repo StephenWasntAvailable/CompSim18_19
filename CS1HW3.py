@@ -36,7 +36,9 @@ def initialplots():
     
 initialplots()
 
-
+def lssqfit():
+    datax = np.array((5,15,25,35,45,55,65,75,85,95,105,115))
+    datay = np.array((32,17,21,7,8,6,5,3,4,1,5,1))
 
 
 
