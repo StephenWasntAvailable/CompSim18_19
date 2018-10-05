@@ -8,7 +8,7 @@ Created on Fri Sep 28 13:45:51 2018
 import matplotlib.pyplot as plt
 import math
 import numpy as np
-
+import scipy.optimize as opt
 
 #Function to plot the provided data, as well as the eye-estimated fit equation
 def initialplots():
@@ -21,13 +21,13 @@ def initialplots():
     plt.title('Standard plot of Decays against Time')
     plt.xlabel('Time')
     plt.ylabel('Decays')
-    plt.legend(loc = 2)
+    plt.legend(loc = 1)
     plt.show()
     plt.plot(arrayx, logarrayy, 'ro', label = 'Provided Data')
     plt.title('Plot of ln(Decays) against Time')
     plt.xlabel('Time')
     plt.ylabel('Natural Log of Decays')
-    plt.legend(loc = 2)
+    plt.legend(loc = 1)
     plt.show()
 #estimate of equation of line of best fit
 #  ~ -3.5 / 110 = -7/220
@@ -48,7 +48,7 @@ def initialplots():
     plt.legend(loc = 3)
     plt.show()
     
-initialplots()
+#initialplots()
 
 
 #Function which holds the data to be fitted, calls the evaluation function for finding
@@ -74,14 +74,14 @@ def lssqfit(amin, amax, bmin, bmax, size):
     approxliney = np.zeros(len(approxlinex))
     for i in range(len(approxlinex)):
         approxliney[i] = a + b * approxlinex[i]
-    plt.figure()
-    plt.plot(approxlinex, approxliney, 'b', label = 'Approximate Fit')
-    plt.plot(datax, datalogy, 'ro', label = 'Data')
-    plt.xlabel('Time')
-    plt.ylabel('Natural Log of Decays')
-    plt.title('Data with Calculated Fit Line')
-    plt.legend(loc = 3)
-    plt.show()
+#    plt.figure()
+#    plt.plot(approxlinex, approxliney, 'b', label = 'Approximate Fit')
+#    plt.plot(datax, datalogy, 'ro', label = 'Data')
+#    plt.xlabel('Time')
+#    plt.ylabel('Natural Log of Decays')
+#    plt.title('Data with Calculated Fit Line')
+#    plt.legend(loc = 3)
+#    plt.show()
     s1 = 'The value of the offset a is %f' % a
     s2 = 'The value of the slope b is %f' % b
     s3 = 'The value of the least squares sum is %f' % smin
@@ -119,7 +119,7 @@ def evaluate(xaxis, yaxis, mina, maxa, minb, maxb, size, svalues):
 #by the most recent call is less than the previous best, otherwise, the function continues
 #without updating a and b
 #increasing maxrec and initsize parameters can greatly increase the running time          
-def improve(amininit, amaxinit, bmininit, bmaxinit, maxrec, initsize):
+def recursive(amininit, amaxinit, bmininit, bmaxinit, maxrec, initsize):
     a, b, smin = lssqfit(amininit, amaxinit, bmininit, bmaxinit, initsize)
     i = 1
     size = initsize
@@ -129,17 +129,47 @@ def improve(amininit, amaxinit, bmininit, bmaxinit, maxrec, initsize):
         anewmax = a + (1 / j ** 2) 
         bnewmin = b - (1 / j ** 2) 
         bnewmax = b + (1 / j ** 2) 
-        size = size + 100
         newa, newb, newsmin = lssqfit(anewmin, anewmax, bnewmin, bnewmax, size)
         if newsmin < smin:
             a = newa; b = newb; smin = newsmin;
+ 
+#Function which returns S for given values of a and b           
+def lssqeval(a, b):
+    datax = np.array((5,15,25,35,45,55,65,75,85,95,105,115))
+    datay = np.array((32,17,21,7,8,6,5,3,4,1,5,1))
+    datalogy = np.zeros((len(datay)))
+    diff = np.zeros((len(datax)))
+    fx = np.zeros((len(datax)))
+    for i in range(len(datay)):
+        datalogy[i] = math.log(datay[i])
+    for k in range(len(datax)-1):
+        fx[k] = a + b * datax[k]
+        diff[k] = abs(datalogy[k]- fx[k])
+    squarevalues = np.square(diff)
+    svalues = (math.sqrt(np.sum(squarevalues)))  
+    print(svalues)
         
+        
+#lssqfit(0, 5, -1, 0, 300)
+#lssqeval(3.5, (-7/220))      
+#recursive(0, 5, -1, 0, 30, 300)
 
-        
-#Note: Increasing the 5th and 6th parameter in the below function call beyond 
-# 3 and 200 respectively consistently causes an error, that I have been unable 
-#to find the cause of
-improve(-5, 5, -5, 5, 3, 500)
+
+#Function which uses existing Python library functions to perform a least squares fit
+def existingfunctions():
+    datax = np.array((5,15,25,35,45,55,65,75,85,95,105,115))
+    datay = np.array((32,17,21,7,8,6,5,3,4,1,5,1))
+    datalogy = np.zeros((len(datay)))
+    for i in range(len(datay)):
+        datalogy[i] = math.log(datay[i])
+    numpypolyfit = np.polyfit(datax, datalogy, 1)
+    print(numpypolyfit)
+    lssqeval(numpypolyfit[1], numpypolyfit[0])
+    
+existingfunctions()
+
+
+print("Stephen O'Shea - JSTP - SN: 13321762")
         
 
 
