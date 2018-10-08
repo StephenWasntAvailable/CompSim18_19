@@ -12,6 +12,9 @@ import numpy as np
 def fx(x):
     return math.sin(x)
 
+def intanalytical(a, b):
+    return (math.cos(a) - math.cos(b))
+
 def intervals(a, b, N):
     interval = np.linspace(a, b, N)
     weights = np.zeros(len(interval))
@@ -30,18 +33,44 @@ def trapezoid(interval, weights):
         approx += fx(interval[i]) * weights[i]
     return approx
     
-def traparray(a, b):
+def traparray(a, b, nmax):
     N = 4;
     interval, weights = intervals(a, b, N)
     intapprox = []
     intapprox.append(trapezoid(interval, weights))
-    for i in range(3, 10):
+    for i in range(3, nmax):
         N = 2 ** i
         interval, weights = intervals(a, b, N)
         intapprox.append(trapezoid(interval, weights))
     return intapprox
 
-def errorcalc(approximations):
-    return approximations
+def relerrorcalc(approximations, a, b):
+    analyticvalue = intanalytical(a, b)
+    relerror = np.zeros(len(approximations))
+    abserror = np.zeros(len(approximations))
+    if analyticvalue == 0:
+        print('Analytic Value for this integral is 0, relative error is undefined, absolute error will be used instead.')
+        for i in range(len(relerror)-1):
+            abserror[i] = abs(analyticvalue - approximations[i])
+        return abserror
+    else:  
+        for i in range(len(relerror)-1):
+            relerror[i] = abs((analyticvalue - approximations[i]) / analyticvalue)
+        return relerror
+
     
-traparray(0, math.pi)
+#traparray(0, math.pi)
+
+def main(a, b, nmax):
+    approximations = traparray(a, b, nmax)
+    relerrors = relerrorcalc(approximations, a, b)
+    nvalues = np.zeros(len(relerrors))
+    for i in range(2, nmax):
+        nvalues[i-2] = 2 ** i
+    plt.loglog(nvalues, relerrors, 'bo')
+    plt.show()
+
+    
+    
+main(0, 2 * math.pi, 15)
+    
