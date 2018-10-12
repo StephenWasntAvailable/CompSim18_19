@@ -104,4 +104,7 @@ def traparrayimp(a, b, nmax):
     
     
 main(0, math.pi, 25)
+
+
+print("Stephen O'Shea - SN = 13321762")
     
