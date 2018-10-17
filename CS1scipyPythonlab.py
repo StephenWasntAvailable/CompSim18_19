@@ -48,7 +48,7 @@ def main():
 
 
 
-    x = find_max_wl(3000)
+    x = find_max_wl(8000)
     print(x)
 main()
 #wls = np.linspace(1e-8, 2e-6, 200)
