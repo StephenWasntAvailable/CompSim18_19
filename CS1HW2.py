@@ -153,7 +153,7 @@ def rounding(x, k, lmax):
     print(s3)
     
 
-#varyivaryh(2, 10, 400)
+varyivaryh(2, 10, 400)
 rounding(2, 5, 322)
 
 print("Stephen O'Shea")
