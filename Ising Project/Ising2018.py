@@ -37,15 +37,18 @@ class IsingSimple:
         """produces a simple plot showing the lattice, different colours indicating different spins"""
         plt.imshow(self.modellattice, shape = 'circle',interpolation = 'nearest')
         
-#    def update_observables(self):
+    def update_observables(self):
         """given the current lattice, updates the observables"""
+        #average energy
+        
+        #magnetisation
         
     
                
 
 
 
-testlattice = IsingSimple(100, [1.0, -1.0], 2.0, 0, 0)
+testlattice = IsingSimple(100, [1.0,-1.0], 2.0, 0, 0)
 testlattice.lattice_grid()
 #testlattice = IsingSimple(100, [1.0, -1.0], 2.0, [[0,0], [0,0]])
 #print(testlattice.modellattice)
