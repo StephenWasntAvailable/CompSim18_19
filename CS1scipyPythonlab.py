@@ -25,7 +25,7 @@ def planck2(wl, temp):
     return -planck(wl, temp)
 
 def find_max_wl(temp):
-    fmin = scipy.optimize.minimize_scalar(planck2, bounds = (0.00000001, 0.000002), args = (temp), method = 'bounded')
+    fmin = minimize_scalar(planck2, bracket=(0.2E-7, 2E-6), args=(temp))
     return fmin.x, -fmin.fun
 
 
