@@ -37,7 +37,8 @@ class IsingSimple:
         0,1  flip due to energy and random flip respectively resulting in spin up
         2    for no flip
         3,4  flip due to energy and random flip respectively resulting in spin down'''
-        self.didflip = np.zeros((self.constants[0], self.constants[0]), dtype = int)
+        self.didflip = np.ones((self.constants[0], self.constants[0]), dtype = int)
+        self.didflip = np.multiply(self.didflip, 2)
         
         '''observables: physical properties of interest of the lattice, currently including
         average energy, magnetisation and magnetic susceptability. Also including 'time' for tracking
@@ -48,11 +49,14 @@ class IsingSimple:
         if observables != [0, 0, 0]:
             self.observables = observables
         else:
-            IsingSimple.update_observables(1)
+            self.observables = observables
+            IsingSimple.update_observables(self)
             
     def lattice_grid(self):
         '''produces a simple plot showing the lattice, different colours indicating different spins'''
+        plt.figure()
         plt.imshow(self.modellattice, shape = 'circle',interpolation = 'nearest')
+        plt.show()
         
 
      
@@ -70,22 +74,19 @@ class IsingSimple:
         #using modulo instead, here constants[0] is the size of the lattice
         return i % self.constants[0]
     
-    def update_observables(self, initial):
+    def update_observables(self):
         '''given the current lattice, updates the observables'''
-        #updating time
-        if initial == 0:
-            self.observables[0] += 1
-        
+       
         #average energy per site
         net_energy = 0
-        for i in range(self.constants[0]-1):
-            for j in range(self.constants[0]-1):
-                net_energy +=  -1 * self.modellattice[i][j] * (self.modellattice[i][IsingSimple.l_b_cnd(j+1)] + self.modellattice[i][IsingSimple.l_b_cnd(j-1)] + self.modellattice[IsingSimple.l_b_cnd(i+1)][j] + self.modellattice[IsingSimple.l_b_cnd(i-1)][j]) - self.constants[2] * self.modellattice[i][j]
+        for i in range((self.constants[0]-1)):
+            for j in range((self.constants[0]-1)):
+                net_energy +=  -1 * self.modellattice[i][j] * (self.modellattice[i][IsingSimple.l_b_cnd(self, j+1)] + self.modellattice[i][IsingSimple.l_b_cnd(self, j-1)] + self.modellattice[IsingSimple.l_b_cnd(self, i+1)][j] + self.modellattice[IsingSimple.l_b_cnd(self, i-1)][j]) - self.constants[2] * self.modellattice[i][j]
         self.observables[2] = net_energy / (self.constants[0] ** 2)
         
         ''' to be finished - add routine for updating based on energy from previous sweep
         #if no pre-existing value for av. energy
-        if self.observables[0] == 0:
+        if self.observables[2] == 0:
             net_energy = 0
             for i in range(self.constants[0]-1):
                 for j in range(self.constants[0]-1):
@@ -97,13 +98,16 @@ class IsingSimple:
         '''
         #magnetisation
         #if no pre-existing value for net mag.
-        if self.observables[0] == 0:
+        if self.observables[1] == 0:
             self.observables[1] = np.sum(self.modellattice) / (self.constants[0] ** 2)
         #if existing value for net mag. exists + record of sites that flipped
         else:
             numdown = np.greater_equal(self.didflip, 3)
             numup = np.less_equal(self.didflip, 1)
-            self.observable[1] = ( self.observable[1] + ( ( numup - numdown ) / ( self.constants[0] ** 2 ) ) )
+            self.observables[1] = ( self.observables[1] + ( ( np.sum(numup) - np.sum(numdown) ) / ( self.constants[0] ** 2 ) ) )
+        
+        #updating time
+        self.observables[0] += 1
             
     def flip_check(self, i, j):
         '''function to check whether a site should be flipped'''
@@ -112,17 +116,26 @@ class IsingSimple:
         number that are the same is greater than or equal to 3, do not flip, then proceed to random check'''
         h = self.constants[2]
         T = self.constants[1]
-        EB = -1. * self.modellattice[i][j] * (self.modellattice[IsingSimple.l_b_cnd(i-1)][j] + self.modellattice[IsingSimple.l_b_cnd(i+1)][j] + self.modellattice[i][IsingSimple.l_b_cnd(j-1)] + self.modellattice[i][IsingSimple.l_b_cnd(j+1)]) - h * self.modellattice[i][j]  
+        EB = -1. * self.modellattice[i][j] * (self.modellattice[IsingSimple.l_b_cnd(self, i-1)][j] + self.modellattice[IsingSimple.l_b_cnd(self, i+1)][j] + self.modellattice[i][IsingSimple.l_b_cnd(self, j-1)] + self.modellattice[i][IsingSimple.l_b_cnd(self, j+1)]) - h * self.modellattice[i][j]  
         EA = -1. * EB  
         deltaE = EA - EB  
         if deltaE<=0.0:  
-            self.modellattice[i][j] *= -1.0  
+            self.modellattice[i][j] *= -1.0
+            if self.modellattice[i][j] == 1.0:
+                self.didflip[i][j] = 0
+            else:
+                self.didflip[i][j] = 3
         else:  
             randnum = random.random() # Generate a random number between 0 and 1  
             if np.exp((-1.0 * deltaE) / T) > randnum: # Prob. test for flip  
                 self.modellattice[i][j] *= -1.0 
+                if self.modellattice[i][j] == 1.0:
+                    self.didflip[i][j] = 1
+                else:
+                    self.didflip[i][j] = 4
             else:  
                 self.modellattice[i][j] *= 1.0
+                self.didflip[i][j] = 2
             
             
     def time_step(self):
@@ -133,16 +146,33 @@ class IsingSimple:
         xy = self.constants[0]
         for i in range(xy):  
             for j in range(xy):  
-                IsingSimple.flip_check(i, j)  
-        IsingSimple.update_observables(0)
+                IsingSimple.flip_check(self, i, j)  
+        IsingSimple.update_observables(self)
         
                
         
 
 
 
-testlattice = IsingSimple([1.0,-1.0], [100, 2.0, 0], 0, 0, [0, 0, 0])
-testlattice.lattice_grid()
+testlattice = IsingSimple([1.0,-1.0], [100, 2.0, 0.0], 0, 0, [0, 0, 0])
+#testlattice.lattice_grid()
+#testlattice.time_step()
+#testlattice.lattice_grid()
+i = 0
+mags = []
+ts = []
+while i <= 1000:
+    ts.append(testlattice.observables[0])
+    mags.append(testlattice.observables[1])
+    testlattice.time_step()
+#    testlattice.lattice_grid()
+    
+    i += 1
+plt.figure()
+plt.plot(ts, mags, 'ro')
+plt.show()
+
+#testlattice.lattice_grid()
 #testlattice = IsingSimple(100, [1.0, -1.0], 2.0, [[0,0], [0,0]])
 #print(testlattice.modellattice)
 #testlattice.update_observables()
