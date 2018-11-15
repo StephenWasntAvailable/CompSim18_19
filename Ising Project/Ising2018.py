@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy
 import random
+import time
 
 
 
@@ -107,18 +108,6 @@ class IsingSimple:
         plt.imshow(self.modellattice, shape = 'circle',interpolation = 'nearest')
         plt.show()
         
-    def l_b_cnd(self, i):
-        '''implements periodic boundary conditions on the lattice'''
-        '''keeping this here as legacy, should I run into issues with the modulo method'''
-#        if i+1 > self.constants[0]-1:  
-#            return 0  
-#        if i-1 < 0:  
-#            return self.constants[0]-1  
-#        else:  
-#            return i 
-        
-        '''using modulo instead, here constants[0] is the size of the lattice'''
-        return i % (self.constants[0])
     
     def update_observables(self):
         '''given the current lattice, updates the observables'''
@@ -127,7 +116,7 @@ class IsingSimple:
         net_energy = 0
         for i in range((self.constants[0]-1)):
             for j in range((self.constants[0]-1)):
-                neighbour_values = self.neighbouring_sites(i, j)[0]
+                neighbour_values = neighbouring_sites(self, i, j)[0]
                 net_energy +=  -1 * self.constants[3] * self.modellattice[i][j] * (np.sum(neighbour_values)) - self.constants[2] * self.modellattice[i][j]
         self.observables[2] = net_energy / (self.constants[0] ** 2)
         
@@ -146,7 +135,7 @@ class IsingSimple:
 #            net_energy_change = 0
 #            flipped_sites = np.argwhere(self.didflip = 1)
 #            for k in range(len(flipped_sites)-1):
-#                nearby_spins, nearby_sites = self.neighbouring_spins(flipped_sites[k][0],flipped_sites[k][1])
+#                nearby_spins, nearby_sites = neighbouring_spins(self, flipped_sites[k][0],flipped_sites[k][1])
                 
 #                
 #            net_energy_change = net_energy_change
@@ -171,17 +160,41 @@ class IsingSimple:
         number that are the same is greater than or equal to 3, do not flip, then proceed to random check'''
         h = self.constants[2]
         T = self.constants[1]
-        nearby_spins, nearby_sites = self.neighbouring_sites([i],[j])
+        nearby_spins, nearby_sites = neighbouring_sites(self,i,j)
         number_same = np.sum(np.equal(nearby_spins, self.modellattice[i][j]))
         EB = -1.0 * self.constants[3] * self.modellattice[i][j] * (np.sum(nearby_spins)) - h * self.modellattice[i][j]  
+#        if h == 0:
+#            EB = self.poss_energies[0 + number_same]
+#        elif self.modellattice == 1.0:
+#            EB = self.poss_energies[0 + 2 * number_same]
+#        else:
+#            EB = self.poss_energies[1 + 2 * number_same]
         EA = -1.0 * EB  
         deltaE = EA - EB  
-#        if deltaE<=0.0:  
-#            self.modellattice[i][j] *= -1.0
-#            if self.modellattice[i][j] == 1.0:
-#                self.didflip[i][j] = 0
-#            else:
-#                self.didflip[i][j] = 3
+        if deltaE<=0.0:  
+            self.modellattice[i][j] *= -1.0
+            if self.modellattice[i][j] == 1.0:
+                self.didflip[i][j] = 0
+            else:
+                self.didflip[i][j] = 3
+        else:  
+            randnum = random.random() 
+            if np.exp((-1.0 * deltaE) / T) > randnum: 
+                self.modellattice[i][j] *= -1.0 
+                if self.modellattice[i][j] == 1.0:
+                    self.didflip[i][j] = 1
+                else:
+                    self.didflip[i][j] = 4
+            else:  
+                self.didflip[i][j] = 2
+        '''alternate implementation'''
+        '''possibly slower than above method'''
+#        if self.modellattice[i][j] == 1 and self.poss_flips_up[number_same] == 1:
+#            self.modellattice[i][j] *= -1.0 
+#            self.didflip[i][j] = 0
+#        elif self.modellattice[i][j] == -1 and self.poss_flips_down[number_same] == 1:
+#            self.modellattice[i][j] *= -1.0 
+#            self.didflip[i][j] = 3
 #        else:  
 #            randnum = random.random() 
 #            if np.exp((-1.0 * deltaE) / T) > randnum: 
@@ -193,22 +206,6 @@ class IsingSimple:
 #            else:  
 #                self.modellattice[i][j] *= 1.0
 #                self.didflip[i][j] = 2
-        '''alternate implementation'''
-        if self.modellattice[i][j] == 1 and self.poss_flips_up[number_same] == 1:
-            self.didflip[i][j] = 0
-        elif self.modellattice[i][j] == -1 and self.poss_flips_down[number_same] == 1:
-            self.didflip[i][j] = 3
-        else:  
-            randnum = random.random() 
-            if np.exp((-1.0 * deltaE) / T) > randnum: 
-                self.modellattice[i][j] *= -1.0 
-                if self.modellattice[i][j] == 1.0:
-                    self.didflip[i][j] = 1
-                else:
-                    self.didflip[i][j] = 4
-            else:  
-                self.modellattice[i][j] *= 1.0
-                self.didflip[i][j] = 2
         
             
             
@@ -224,19 +221,39 @@ class IsingSimple:
         IsingSimple.update_observables(self)
         
                
-    def neighbouring_sites(self, i, j):
-        '''function to return neighbouring site indexes and spins'''
-        '''indexes currently unused'''
-#        neighbour_sites = np.zeros((4,2))
-#        s = np.array([[(self.l_b_cnd(i+1)),j], [(self.l_b_cnd(i-1)),j], [i,(self.l_b_cnd(j+1))], [i,(self.l_b_cnd(j-1))]])
-#        neighbour_sites = s
-#        neighbour_values = np.zeros(4)
-#        v = np.array([self.modellattice[self.l_b_cnd(i+1)][j], self.modellattice[self.l_b_cnd(i-1)][j], self.modellattice[i][self.l_b_cnd(j+1)], self.modellattice[i][self.l_b_cnd(j-1)]])
-#        neighbour_values = v
-        neighbour_sites=np.array([[(self.l_b_cnd(i+1)),j], [(self.l_b_cnd(i-1)),j], [i,(self.l_b_cnd(j+1))], [i,(self.l_b_cnd(j-1))]])
-        neighbour_values=np.array([self.modellattice[self.l_b_cnd(i+1)][j], self.modellattice[self.l_b_cnd(i-1)][j], self.modellattice[i][self.l_b_cnd(j+1)], self.modellattice[i][self.l_b_cnd(j-1)]])
-        return neighbour_values, neighbour_sites
 
+
+
+def neighbouring_sites(ising, i, j):
+    '''function to return neighbouring site indexes and spins'''
+    '''indexes currently unused'''
+    
+    neighbour_sites = np.zeros((4,2))
+    s = [[(i+1)%(ising.constants[0]),j], [(i-1)%(ising.constants[0]),j], [i,(j+1)%(ising.constants[0])], [i,(j-1)%(ising.constants[0])]]
+    neighbour_sites = np.array(s)
+    neighbour_values = np.zeros(4)
+    v = [ising.modellattice[(i+1)%(ising.constants[0])][j], ising.modellattice[(i-1)%(ising.constants[0])][j], ising.modellattice[i][(j+1)%(ising.constants[0])], ising.modellattice[i][(j-1)%(ising.constants[0])]]
+    neighbour_values = np.array(v)
+#    neighbour_sites=np.array([[(self.l_b_cnd(i+1)),j], [(self.l_b_cnd(i-1)),j], [i,(self.l_b_cnd(j+1))], [i,(self.l_b_cnd(j-1))]])
+#    neighbour_values=np.array([self.modellattice[self.l_b_cnd(i+1)][j], self.modellattice[self.l_b_cnd(i-1)][j], self.modellattice[i][self.l_b_cnd(j+1)], self.modellattice[i][self.l_b_cnd(j-1)]])
+    return neighbour_values, neighbour_sites
+
+def l_b_cnd(size, i):
+    '''implements periodic boundary conditions on the lattice'''
+    '''using modulo instead, here size is the size of the lattice'''
+    return i % size
+
+
+
+
+
+
+
+
+
+
+'''testing area'''
+start=time.time()
 
 
 testlattice = IsingSimple([1.0,-1.0], [100, 2.0, 0.0, 1.0], 0, 0, [0, 0, 0])
@@ -246,11 +263,12 @@ testlattice = IsingSimple([1.0,-1.0], [100, 2.0, 0.0, 1.0], 0, 0, [0, 0, 0])
 z = 0
 #mags = []
 #ts = []
-while z <= 10:
+while z <= 100:
 #    ts.append(testlattice.observables[0])
 #    mags.append(testlattice.observables[1])
     testlattice.time_step()
-    testlattice.lattice_grid()
+    if z%10 == 0:
+        testlattice.lattice_grid()
     
     z += 1
 #plt.figure()
@@ -265,8 +283,10 @@ while z <= 10:
 #print(testlattice.modellattice)
 #testlattice.update_observables()
 #print(testlattice.observables[1])
-        
-        
+
+end = time.time()    
+print(end - start)
+'''end testing area'''       
 """
 TODO
 1. Time evolution to equilibrium
