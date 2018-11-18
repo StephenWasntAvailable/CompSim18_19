@@ -220,6 +220,11 @@ class IsingSimple:
                 IsingSimple.flip_check(self, i, j)  
         IsingSimple.update_observables(self)
         
+    
+                
+                
+            
+        
                
 
 
@@ -247,8 +252,29 @@ def l_b_cnd(size, i):
 
 
 
+class ToEquilibrium(IsingSimple):
+    '''class to execute simulated annealing in order to bring the lattice to equilibrium'''
+    def __init__(self, ising_ob, T=-1, alpha=-1, stopping_T=-1, stopping_iter=-1):
+        
+        super().__init__(ising_ob.spins, ising_ob.constants, ising_ob.modellattice, ising_ob.didflip, ising_ob.observables)
+        
+        self.currentgrid = self.modellattice
+        
+        self.bestgrid = np.copy(self.modellattice)
+        
+        #'fitness' or energy of solutions
+        self.cur_fitness = self.fitness(self.currentgrid)
+        self.initial_fitness = self.cur_fitness
+        self.best_fitness = self.cur_fitness
+        self.fitness_list = [self.cur_fitness]
 
-
+        #annealing parameters (use defaults if not set...)
+        self.T = 1.0E6 if T == -1 else T
+        self.alpha = 0.999 if alpha == -1 else alpha
+        self.stopping_temperature = 0.0001 if stopping_T == -1 else stopping_T
+        self.stopping_iter = 100000 if stopping_iter == -1 else stopping_iter
+        self.iteration = 1
+        
 
 
 
