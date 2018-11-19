@@ -20,8 +20,9 @@ class IsingSimple:
         '''initial properties used for generating the state and for later processing
         spins: possible spin values, for collinear case, 1 and -1'''
         self.spins = spins
-        '''constants: 0 = lattice size, 1 = temperature, 2 = external magnetic field, 3 interaction energy J'''
+        '''constants: 0 = lattice size, 1 = temperature, 2 = external magnetic field, 3 interaction energy J, 4 boltzmann const'''
         self.constants = constants
+        self.constants[4] = 1
         
         '''modellattice: lattice to use as a starting point for the new lattice i.e
         if using a lattice from a previous run as a starting point
@@ -104,9 +105,13 @@ class IsingSimple:
         '''index 0: the tolerance when calculating the new mag - old mag, values below this tolerance
         are taken to indicate a system near equilibrium
         index 1: the minimum number of metropolis sweeps before the above mentioned tolerance checking 
-        starts'''
+        starts
+        index 2: number of consecutive sub threshold values in order to be considered at equil'''
         '''to change these parameters, see the change_equil_params method'''
-        self.equilibrium_parameters = [3.5 / self.constants[0] ** 2, 20 * self.constants[0]]
+        self.equilibrium_parameters = [3.5 / self.constants[0] ** 2, 20 * self.constants[0], 3]
+        '''arrays for storing data as the lattice evolves'''
+        self.energy_per_site=[]
+        self.netmag_per_site=[]
             
             
             
@@ -119,34 +124,39 @@ class IsingSimple:
     
     def update_observables(self):
         '''given the current lattice, updates the observables'''
-       
+        '''full recalc of energy after every sweep'''
         '''average energy per site'''
         net_energy = 0
         for i in range((self.constants[0]-1)):
             for j in range((self.constants[0]-1)):
-                neighbour_values = neighbouring_sites(self, i, j)[0]
+                neighbour_values, neighbour_sites = neighbouring_sites(self, i, j)
                 net_energy +=  -1 * self.constants[3] * self.modellattice[i][j] * (np.sum(neighbour_values)) - self.constants[2] * self.modellattice[i][j]
         self.observables[2] = net_energy / (self.constants[0] ** 2)
         
-        '''to be finished - add routine for updating based on energy from previous sweep
-        if no pre-existing value for av. energy'''
+        '''if there is an existing energy value and a record of the sites that flipped'''
+        '''do not need to fully recalc for neighbouring sites, should be sufficient to adjust by +-2J 
+        depending on whether the flipped spin is now the same or different to the neighbour'''
 #        if self.observables[2] == 0 and self.observables[0] == 0:
 #            net_energy = 0
 #            for i in range(self.constants[0]-1):
 #                for j in range(self.constants[0]-1):
-#                    net_energy +=  -1 * self.modellattice[i][j] * (self.modellattice[i][IsingSimple.l_b_cnd(j+1)] + self.modellattice[i][IsingSimple.l_b_cnd(j-1)] + self.modellattice[IsingSimple.l_b_cnd(i+1)][j] + self.modellattice[IsingSimple.l_b_cnd(i-1)][j]) - self.constants[2] * self.modelattice[i][j]
+#                    neighbour_values, neighbour_sites = neighbouring_sites(self, i, j)
+#                    net_energy +=  -1 * self.constants[3] * self.modellattice[i][j] * (np.sum(neighbour_values)) - self.constants[2] * self.modellattice[i][j]
 #            self.observables[2] = net_energy / (self.constants[0] ** 2)
-        '''if there is an existing energy value and a record of the sites that flipped            '''
 #        else:
-        '''do not need to fully recalc for neighbouring sites, should be sufficient to adjust by +-2J 
-        depending on whether the flipped spin is now the same or different to the neighbour'''
 #            net_energy_change = 0
-#            flipped_sites = np.argwhere(self.didflip = 1)
+#            flipped_sites = np.argwhere(self.didflip!=2)
 #            for k in range(len(flipped_sites)-1):
-#                nearby_spins, nearby_sites = neighbouring_spins(self, flipped_sites[k][0],flipped_sites[k][1])
-                
-#                
-#            net_energy_change = net_energy_change
+#                neighbour_values, neighbour_sites = neighbouring_sites(self, flipped_sites[k][0],flipped_sites[k][1])
+#                number_same = np.sum(np.equal(neighbour_values, self.modellattice[flipped_sites[k][0]][flipped_sites[k][1]])) 
+#                deltaE1 = 2.0 * self.constants[3] * self.modellattice[flipped_sites[k][0]][flipped_sites[k][1]] * (np.sum(neighbour_values)) 
+#                deltaE2 = 2.0 * self.constants[2] * self.modellattice[flipped_sites[k][0]][flipped_sites[k][1]]
+#                deltaE3 = -2.0 * self.constants[3] * number_same
+#                deltaE4 = 2.0 * self.constants[3] * (4 - number_same)
+#                net_energy_change = net_energy_change + deltaE1 + deltaE2 + deltaE3 + deltaE4
+#
+#            self.observables[2] += net_energy_change / (self.constants[0] ** 2)
+#            print(net_energy_change)
         
         '''magnetisation
         if no pre-existing value for net mag.'''
@@ -230,6 +240,11 @@ class IsingSimple:
         
     
     def to_equilibrium(self):
+        '''function to attempt to bring the lattice to equilibrium, based on the net magnetisation
+        after some warm up sweeps, the method checks for a series of consecutive sweeps wherein
+        the net magnetisation of the lattice only changes by a small amount
+        the number of warm up sweeps, definition of 'small amount', and number of consecutives
+        can all be changed using the update_equil_params method'''
         tol = self.equilibrium_parameters[0]
         consec_below_tol = 0
         min_iter = self.equilibrium_parameters[1]
@@ -250,23 +265,34 @@ class IsingSimple:
                 consec_below_tol = 0
 #                print('0')
     
-    def update_equil_params(self, newtol, newmin):
+    def update_equil_params(self, newtol, newmin, minconsec):
         '''method for updating the equilibrium parameters for the current lattice'''
+        '''first two calculated in terms of the size of the lattice, third just a number'''
         self.equilibrium_parameters[0] = newtol / self.constants[0] ** 2
         self.equilibrium_parameters[1] = newmin * self.constants[0]
+        self.equilibrium_parameters[2] = minconsec
     
-                
-                
-                
+    def equilibrium_evolution(self, num_sweeps):
+        '''evolves the lattice while at equilibrium, and stores values of observables 
+        inn arrays defined in the __init__, for use with graphing etc.'''
+        i = 0
+        self.energy_per_site.append(self.observables[2])
+        self.netmag_per_site.append(self.observables[1])
+        while i < num_sweeps:
+            self.time_step()
+            self.energy_per_site.append(self.observables[2])
+            self.netmag_per_site.append(self.observables[1])
             
-        
-               
-
-
+            
+            
+            i += 1
+            
 
 def neighbouring_sites(ising, i, j):
     '''function to return neighbouring site indexes and spins'''
     '''indexes currently unused'''
+    '''syntax a bit of a mess here, but was running into issues with simpler versions
+    and this method works reasonably well'''
     
     neighbour_sites = np.zeros((4,2))
     s = [[(i+1)%(ising.constants[0]),j], [(i-1)%(ising.constants[0]),j], [i,(j+1)%(ising.constants[0])], [i,(j-1)%(ising.constants[0])]]
@@ -281,6 +307,7 @@ def neighbouring_sites(ising, i, j):
 def l_b_cnd(size, i):
     '''implements periodic boundary conditions on the lattice'''
     '''using modulo instead, here size is the size of the lattice'''
+    '''no longer really using this, the boundary conditions are built into the neighbouring_sites function'''
     return i % size
 
 
@@ -322,29 +349,32 @@ class ToEquilibrium(IsingSimple):
 """
 
 '''testing area'''
-start=time.time()
-
-
-testlattice = IsingSimple([1.0,-1.0], [50, 2.5, 0.0, 1.0], 0, 0, [0, 0, 0])
-testlattice.to_equilibrium()
-testlattice.lattice_grid()
-print(testlattice.observables[0])
-
-
-end = time.time()    
-print(end - start)
+#start=time.time()
+#
+#
+#testlattice = IsingSimple([1.0,-1.0], [20, 2.0, 0.0, 1.0, 0], 0, 0, [0, 0, 0])
+#testlattice.to_equilibrium()
+#print(testlattice.observables[0])
+#testlattice.lattice_grid()
+#testlattice.equilibrium_evolution(100)
+#print(testlattice.observables[0])
+#
+#
+#
+#end = time.time()    
+#print(end - start)
 '''end testing area'''       
 """
 TODO
 1. Time evolution to equilibrium
     1.1 Evolve lattice through single time step
-        1.1.1 Define function for checking whether a given lattice point should flip
+        1.1.1 Define function for checking whether a given lattice point should flip DONE
         1.1.2 Evaluate each lattice point using 1.1.1 DONE
     1.2 Evolve lattice to equilibrium
-        1.2.1 Determine appropriate property which converges at equilibrium
-        1.2.2 Function to evaluate lattice for property convergence as time proceeds
+        1.2.1 Determine appropriate property which converges at equilibrium DONE
+        1.2.2 Function to evaluate lattice for property convergence as time proceeds DONE
     1.3 Update observables after full sweep
-        1.3.1 Average energy
+        1.3.1 Average energy DONE
         1.3.2 Magnetisation DONE
         1.3.3 Magnetic Suceptability
         
