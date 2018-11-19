@@ -54,6 +54,7 @@ class IsingSimple:
             IsingSimple.update_observables(self)
             
         '''poss_energies: for storing the possible energy values for the given constants defining the lattice'''
+        ''' not currently using these, as they are causing problems with how the lattice evolves'''
         self.poss_energies = 0
         '''calculate the possible energy values
         for h!=0 there are up to 10 unique values when considering only nearest neighbour interaction
@@ -99,6 +100,13 @@ class IsingSimple:
             self.poss_flips_down = [1,1,0,0,0]
         else:
             raise ValueError('Currently not allowing for abs(h) greater than or equal to 2 * J')
+        '''parameters determining how the to_equilibrium method functions'''
+        '''index 0: the tolerance when calculating the new mag - old mag, values below this tolerance
+        are taken to indicate a system near equilibrium
+        index 1: the minimum number of metropolis sweeps before the above mentioned tolerance checking 
+        starts'''
+        '''to change these parameters, see the change_equil_params method'''
+        self.equilibrium_parameters = [3.5 / self.constants[0] ** 2, 20 * self.constants[0]]
             
             
             
@@ -162,22 +170,20 @@ class IsingSimple:
         T = self.constants[1]
         nearby_spins, nearby_sites = neighbouring_sites(self,i,j)
         number_same = np.sum(np.equal(nearby_spins, self.modellattice[i][j]))
-        EB = -1.0 * self.constants[3] * self.modellattice[i][j] * (np.sum(nearby_spins)) - h * self.modellattice[i][j]  
+        deltaE = 2.0 * self.constants[3] * self.modellattice[i][j] * (np.sum(nearby_spins)) + 2 * h * self.modellattice[i][j]  
 #        if h == 0:
 #            EB = self.poss_energies[0 + number_same]
 #        elif self.modellattice == 1.0:
 #            EB = self.poss_energies[0 + 2 * number_same]
 #        else:
-#            EB = self.poss_energies[1 + 2 * number_same]
-        EA = -1.0 * EB  
-        deltaE = EA - EB  
-        if deltaE<=0.0:  
+#            EB = self.poss_energies[1 + 2 * number_same] 
+        if deltaE<0.0:  
             self.modellattice[i][j] *= -1.0
             if self.modellattice[i][j] == 1.0:
                 self.didflip[i][j] = 0
             else:
                 self.didflip[i][j] = 3
-        else:  
+        elif deltaE > 0:  
             randnum = random.random() 
             if np.exp((-1.0 * deltaE) / T) > randnum: 
                 self.modellattice[i][j] *= -1.0 
@@ -187,6 +193,8 @@ class IsingSimple:
                     self.didflip[i][j] = 4
             else:  
                 self.didflip[i][j] = 2
+        else:
+            self.didflip[i][j] = 2
         '''alternate implementation'''
         '''possibly slower than above method'''
 #        if self.modellattice[i][j] == 1 and self.poss_flips_up[number_same] == 1:
@@ -222,21 +230,32 @@ class IsingSimple:
         
     
     def to_equilibrium(self):
-        tol = 1.0 / self.constants[0] 
-        min_iter = 10 * self.constants[0]
+        tol = self.equilibrium_parameters[0]
+        consec_below_tol = 0
+        min_iter = self.equilibrium_parameters[1]
+        print(tol, min_iter)
         i = 0
-        M_old = self.observables[1]
-        self.time_step() # Evolve system through one step
-        i += 1
-        M_new = self.observables[1]
         while i < min_iter:
             self.time_step()
-            M_new = self.observables[1]
             i += 1
-        while abs( M_new - M_old ) > tol:
+        M_new = self.observables[1]
+        while consec_below_tol <= 3:
             M_old = M_new
             self.time_step()
             M_new = self.observables[1]
+            if abs(M_new - M_old) <= tol:
+                consec_below_tol += 1
+#                print('+1')
+            else:
+                consec_below_tol = 0
+#                print('0')
+    
+    def update_equil_params(self, newtol, newmin):
+        '''method for updating the equilibrium parameters for the current lattice'''
+        self.equilibrium_parameters[0] = newtol / self.constants[0] ** 2
+        self.equilibrium_parameters[1] = newmin * self.constants[0]
+    
+                
                 
                 
             
@@ -303,7 +322,17 @@ class ToEquilibrium(IsingSimple):
 """
 
 '''testing area'''
+start=time.time()
 
+
+testlattice = IsingSimple([1.0,-1.0], [50, 2.5, 0.0, 1.0], 0, 0, [0, 0, 0])
+testlattice.to_equilibrium()
+testlattice.lattice_grid()
+print(testlattice.observables[0])
+
+
+end = time.time()    
+print(end - start)
 '''end testing area'''       
 """
 TODO
