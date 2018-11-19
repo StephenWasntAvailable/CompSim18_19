@@ -221,6 +221,22 @@ class IsingSimple:
         IsingSimple.update_observables(self)
         
     
+    def to_equilibrium(self):
+        tol = 1.0 / self.constants[0] 
+        min_iter = 10 * self.constants[0]
+        i = 0
+        M_old = self.observables[1]
+        self.time_step() # Evolve system through one step
+        i += 1
+        M_new = self.observables[1]
+        while i < min_iter:
+            self.time_step()
+            M_new = self.observables[1]
+            i += 1
+        while abs( M_new - M_old ) > tol:
+            M_old = M_new
+            self.time_step()
+            M_new = self.observables[1]
                 
                 
             
@@ -251,7 +267,8 @@ def l_b_cnd(size, i):
 
 
 
-
+"""
+will come back to this if I have time / the quicker to code method is too slow and an alternative is required
 class ToEquilibrium(IsingSimple):
     '''class to execute simulated annealing in order to bring the lattice to equilibrium'''
     def __init__(self, ising_ob, T=-1, alpha=-1, stopping_T=-1, stopping_iter=-1):
@@ -263,7 +280,7 @@ class ToEquilibrium(IsingSimple):
         self.bestgrid = np.copy(self.modellattice)
         
         #'fitness' or energy of solutions
-        self.cur_fitness = self.fitness(self.currentgrid)
+        self.cur_fitness = self.fitness()
         self.initial_fitness = self.cur_fitness
         self.best_fitness = self.cur_fitness
         self.fitness_list = [self.cur_fitness]
@@ -275,43 +292,18 @@ class ToEquilibrium(IsingSimple):
         self.stopping_iter = 100000 if stopping_iter == -1 else stopping_iter
         self.iteration = 1
         
-
-
+    def fitness(self):
+        net_energy = 0
+        for i in range((self.constants[0]-1)):
+            for j in range((self.constants[0]-1)):
+                neighbour_values = neighbouring_sites(self, i, j)[0]
+                net_energy +=  -1 * self.constants[3] * self.modellattice[i][j] * (np.sum(neighbour_values)) - self.constants[2] * self.modellattice[i][j]
+        fitness_value = net_energy / (self.constants[0] ** 2)
+        return fitness_value
+"""
 
 '''testing area'''
-start=time.time()
 
-
-testlattice = IsingSimple([1.0,-1.0], [100, 2.0, 0.0, 1.0], 0, 0, [0, 0, 0])
-#testlattice.lattice_grid()
-#testlattice.time_step()
-#testlattice.lattice_grid()
-z = 0
-#mags = []
-#ts = []
-while z <= 100:
-#    ts.append(testlattice.observables[0])
-#    mags.append(testlattice.observables[1])
-    testlattice.time_step()
-    if z%10 == 0:
-        testlattice.lattice_grid()
-    
-    z += 1
-#plt.figure()
-#plt.plot(ts, mags, 'ro')
-#plt.show()
-
-#nbsites, nbvals = neighbouring_sites(testlattice.modellattice, 3, 5)
-#print(nbsites)
-
-#testlattice.lattice_grid()
-#testlattice = IsingSimple(100, [1.0, -1.0], 2.0, [[0,0], [0,0]])
-#print(testlattice.modellattice)
-#testlattice.update_observables()
-#print(testlattice.observables[1])
-
-end = time.time()    
-print(end - start)
 '''end testing area'''       
 """
 TODO
