@@ -22,6 +22,7 @@ class IsingSimple:
         self.spins = spins
         '''constants: 0 = lattice size, 1 = temperature, 2 = external magnetic field, 3 interaction energy J, 4 boltzmann const'''
         self.constants = constants
+        '''this is not used anywhere, just to confirm that I'm treating Boltzmann const as equal to unity'''
         self.constants[4] = 1
         
         '''modellattice: lattice to use as a starting point for the new lattice i.e
@@ -48,7 +49,7 @@ class IsingSimple:
         time 0
         net magnetisation per site 1
         average energy per site 2'''
-        if observables != [0, 0, 0]:
+        if observables != [0, 0, 0, 0, 0]:
             self.observables = observables
         else:
             self.observables = observables
@@ -108,11 +109,12 @@ class IsingSimple:
         starts
         index 2: number of consecutive sub threshold values in order to be considered at equil'''
         '''to change these parameters, see the change_equil_params method'''
-        self.equilibrium_parameters = [3.5 / self.constants[0] ** 2, 20 * self.constants[0], 3]
+        self.equilibrium_parameters = [3.0 / (self.constants[0] ** 2), 1000, 3]
         '''arrays for storing data as the lattice evolves'''
         self.energy_per_site=[]
         self.netmag_per_site=[]
-            
+        self.energy_sq_per_site=[]
+        self.netmag_sq_per_site=[]    
             
             
     def lattice_grid(self):
@@ -155,7 +157,7 @@ class IsingSimple:
 #                deltaE4 = 2.0 * self.constants[3] * (4 - number_same)
 #                net_energy_change = net_energy_change + deltaE1 + deltaE2 + deltaE3 + deltaE4
 #
-#            self.observables[2] += net_energy_change / (self.constants[0] ** 2)
+#            self.observables[2] = self.observables[2] + (net_energy_change / (self.constants[0] ** 2))
 #            print(net_energy_change)
         
         '''magnetisation
@@ -166,7 +168,23 @@ class IsingSimple:
         else:
             numdown = np.greater_equal(self.didflip, 3)
             numup = np.less_equal(self.didflip, 1)
-            self.observables[1] = ( self.observables[1] + ( ( np.sum(numup) - np.sum(numdown) ) / ( self.constants[0] ** 2 ) ) )
+            self.observables[1] = self.observables[1] + ( ( np.sum(numup) - np.sum(numdown) ) / ( self.constants[0] ** 2 ) ) 
+        
+        '''magnetisation squared'''
+        if self.observables[3] == 0:
+            self.observables[3] = (np.sum(self.modellattice)/ (self.constants[0] ** 2) ) ** 2            
+        else:
+            numdown = np.greater_equal(self.didflip, 3)
+            numup = np.less_equal(self.didflip, 1)
+            self.observables[3] =  self.observables[3] + ( ( (np.sum(numup) - np.sum(numdown)) ** 2 ) / ( self.constants[0] ** 2 ) ) 
+            
+        '''energy squared'''
+        net_energy_sq = 0
+        for i in range((self.constants[0]-1)):
+            for j in range((self.constants[0]-1)):
+                neighbour_values, neighbour_sites = neighbouring_sites(self, i, j)
+                net_energy_sq +=  -1 * self.constants[3] * self.modellattice[i][j] * (np.sum(neighbour_values)) - self.constants[2] * self.modellattice[i][j]
+        self.observables[4] = ( (net_energy_sq) / (self.constants[0] ** 2) ) ** 2
         
         '''updating time'''
         self.observables[0] += 1
@@ -239,22 +257,31 @@ class IsingSimple:
         IsingSimple.update_observables(self)
         
     
-    def to_equilibrium(self):
+    def to_equilibrium(self, displayinfo = 0):
         '''function to attempt to bring the lattice to equilibrium, based on the net magnetisation
         after some warm up sweeps, the method checks for a series of consecutive sweeps wherein
         the net magnetisation of the lattice only changes by a small amount
         the number of warm up sweeps, definition of 'small amount', and number of consecutives
         can all be changed using the update_equil_params method'''
         tol = self.equilibrium_parameters[0]
-        consec_below_tol = 0
+        min_consec_below_tol = self.equilibrium_parameters[2]
         min_iter = self.equilibrium_parameters[1]
-        print(tol, min_iter)
+        a = 'Threshold between steps: %f' %tol
+        b = 'Minimum number of iterations before checking for equilibrium: %i' %min_iter
+        c = 'Minimum number of iterations with change below threshold to consider at equilibrium: %i' %min_consec_below_tol
+        d = 'To alter any of these parameters before running again, use the update_equil_params(newmin, newtol, newminconsec) method'
+        if displayinfo == 1:
+            print(b)
+            print(a)
+            print(c)
+            print(d)
         i = 0
+        consec_below_tol = 0
         while i < min_iter:
             self.time_step()
             i += 1
         M_new = self.observables[1]
-        while consec_below_tol <= 3:
+        while consec_below_tol <= min_consec_below_tol:
             M_old = M_new
             self.time_step()
             M_new = self.observables[1]
@@ -265,27 +292,50 @@ class IsingSimple:
                 consec_below_tol = 0
 #                print('0')
     
-    def update_equil_params(self, newtol, newmin, minconsec):
+    def update_equil_params(self, newmin, newtol, minconsec):
         '''method for updating the equilibrium parameters for the current lattice'''
-        '''first two calculated in terms of the size of the lattice, third just a number'''
+        '''first calculated in terms of the size of the lattice, others just a number'''
         self.equilibrium_parameters[0] = newtol / self.constants[0] ** 2
-        self.equilibrium_parameters[1] = newmin * self.constants[0]
+        self.equilibrium_parameters[1] = newmin 
         self.equilibrium_parameters[2] = minconsec
+        a = 'Threshold between steps: %f' %self.equilibrium_parameters[0]
+        b = 'Minimum number of iterations before checking for equilibrium: %i' %self.equilibrium_parameters[1]
+        c = 'Minimum number of iterations with change below threshold to consider at equilibrium: %i' %self.equilibrium_parameters[2]
+        print(b, a, c)
+        
     
     def equilibrium_evolution(self, num_sweeps):
         '''evolves the lattice while at equilibrium, and stores values of observables 
         inn arrays defined in the __init__, for use with graphing etc.'''
         i = 0
         self.energy_per_site.append(self.observables[2])
+        self.energy_sq_per_site.append(self.observables[4])
         self.netmag_per_site.append(self.observables[1])
+        self.netmag_sq_per_site.append(self.observables[3])
         while i < num_sweeps:
             self.time_step()
             self.energy_per_site.append(self.observables[2])
+            self.energy_sq_per_site.append(self.observables[4])
             self.netmag_per_site.append(self.observables[1])
+            self.netmag_sq_per_site.append(self.observables[3])
             
             
             
             i += 1
+            
+    def update_constants(self, newt, newh):
+        '''method to update the 'constants' of the lattice, in particular the 
+        temperature and external magnetic field, can be used for seeing how
+        observables change with the change of these parameters'''
+        if newt != self.constants[1]:
+            self.constants[1] = newt
+            a = 'New Temperature: %f' %newt
+            print(a)
+        if newh != self.constants[2]:
+            self.constants[2] = newh
+            b = 'New External Field: %f' %newh
+            print(b)
+        
             
 
 def neighbouring_sites(ising, i, j):
