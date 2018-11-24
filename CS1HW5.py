@@ -9,6 +9,7 @@ Created on Mon Nov  5 16:05:03 2018
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
+from scipy.integrate import odeint
 
 def function(x, t):
     return (1 + t) * x + 1 - (3 * t) + t ** 2
@@ -21,10 +22,10 @@ def slope_field():
     fxt = function(X , T)
 #    print(fxt)
     plt.figure()
-    plt.quiver(X, T, fxt, fxt, units = 'width')
+    plt.quiver(T, X, fxt, fxt, units = 'width')
     plt.show()
     plt.figure()
-    plt.pcolormesh(X, T, fxt, cmap=cm.PuOr, vmax=0.25*fxt.max())
+    plt.pcolormesh(T, X, fxt, cmap=cm.PuOr, vmax=0.25*fxt.max())
     plt.show()
     
 slope_field()
@@ -59,19 +60,20 @@ def simple_euler_routine(x0, t0, maxt, step):
         raise ValueError('Invalid choice of t0, tmax')
 
 def simple_euler_plotting():
-    ttest1, xtest1 = simple_euler_routine(0.0655, 0, 2.5, 0.01)
-    ttest2, xtest2 = simple_euler_routine(0.0663, 2.5, 0, -0.01)
+    ttest1, xtest1 = simple_euler_routine(0.0655, 0, 3.0, 0.001)
+    ttest2, xtest2 = simple_euler_routine(0.0663, 3.0, 0, -0.001)
     tsforcritx = np.linspace(0, 3, 20)
     critx = np.ones((len(tsforcritx)))
     critx = np.multiply(critx, 0.065923)
     plt.figure()
     plt.plot(ttest1, xtest1, 'r', label ='Approaching critical x from below')
     plt.plot(ttest2, xtest2, 'b', label ='Approaching critical x from above')
-    plt.plot(tsforcritx, critx, 'g-', label ='Critical x')
+    plt.xlabel('t')
+    plt.ylabel('f(x, t)')
     plt.legend(loc=2)
     plt.plot()
     
-#simple_euler_plotting()
+simple_euler_plotting()
 
 def improved_euler(xi, ti, deltat):
     xiplus1 = xi + 0.5*deltat*( function(xi,ti) + function(xi + deltat * function(xi, ti), ti + deltat) )
@@ -102,19 +104,20 @@ def improved_euler_routine(x0, t0, maxt, step):
         raise ValueError('Invalid choice of t0, tmax')
         
 def improved_euler_plotting():
-    ttest1, xtest1 = improved_euler_routine(0.0655, 0, 3.0, 0.04)
-    ttest2, xtest2 = improved_euler_routine(0.0663, 3.0, 0, -0.04)
+    ttest1, xtest1 = improved_euler_routine(0.0655, 0, 3.0, 0.02)
+    ttest2, xtest2 = improved_euler_routine(0.0663, 3.0, 0, -0.02)
     tsforcritx = np.linspace(0, 3, 20)
     critx = np.ones((len(tsforcritx)))
     critx = np.multiply(critx, 0.065923)
     plt.figure()
     plt.plot(ttest1, xtest1, 'r', label ='Approaching critical x from below')
     plt.plot(ttest2, xtest2, 'b', label ='Approaching critical x from above')
-    plt.plot(tsforcritx, critx, 'g-', label ='Critical x')
-    plt.legend(loc=2)
+    plt.xlabel('t')
+    plt.ylabel('f(x, t)')
+    plt.legend(loc=3)
     plt.plot()
     
-#improved_euler_plotting()
+improved_euler_plotting()
 
 
 def runge_kutta(xi, ti, deltat):
@@ -150,19 +153,22 @@ def runge_kutta_routine(x0, t0, maxt, step):
         raise ValueError('Invalid choice of t0, tmax')
 
 def runge_kutta_plotting():
-    ttest1, xtest1 = runge_kutta_routine(0.0655, 0, 3.0, 0.02)
-    ttest2, xtest2 = runge_kutta_routine(0.0663, 3.0, 0, -0.02)
+    ttest1, xtest1 = runge_kutta_routine(0.0655, 0.0, 3.0, 0.02)
+    ttest2, xtest2 = runge_kutta_routine(0.0663, 3.0, 0.0, -0.02)
     tsforcritx = np.linspace(0, 3, 20)
     critx = np.ones((len(tsforcritx)))
     critx = np.multiply(critx, 0.065923)
     plt.figure()
     plt.plot(ttest1, xtest1, 'r', label ='Approaching critical x from below')
     plt.plot(ttest2, xtest2, 'b', label ='Approaching critical x from above')
-    plt.plot(tsforcritx, critx, 'g-', label ='Critical x')
-    plt.legend(loc=2)
+    plt.xlabel('t')
+    plt.ylabel('f(x, t)')
+    plt.legend(loc=3)
     plt.plot()
     
 runge_kutta_plotting()
+
+    
 
 print('''Stephen O'Shea - SN 13321762''')  
     
