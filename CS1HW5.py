@@ -25,7 +25,7 @@ def slope_field():
     plt.quiver(T, X, fxt, fxt, units = 'width')
     plt.show()
     plt.figure()
-    plt.pcolormesh(X, T, fxt, cmap=cm.PuOr, vmax=0.25*fxt.max())
+    plt.pcolormesh(T, X, fxt, cmap=cm.PuOr, vmax=0.25*fxt.max())
     plt.show()
     
 slope_field()
@@ -60,8 +60,8 @@ def simple_euler_routine(x0, t0, maxt, step):
         raise ValueError('Invalid choice of t0, tmax')
 
 def simple_euler_plotting():
-    ttest1, xtest1 = simple_euler_routine(0.0655, 0, 3.0, 0.02)
-    ttest2, xtest2 = simple_euler_routine(0.0663, 3.0, 0, -0.02)
+    ttest1, xtest1 = simple_euler_routine(0.0655, 0, 3.0, 0.001)
+    ttest2, xtest2 = simple_euler_routine(0.0663, 3.0, 0, -0.001)
     tsforcritx = np.linspace(0, 3, 20)
     critx = np.ones((len(tsforcritx)))
     critx = np.multiply(critx, 0.065923)
