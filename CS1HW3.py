@@ -132,6 +132,7 @@ def recursive(amininit, amaxinit, bmininit, bmaxinit, maxrec, initsize):
         newa, newb, newsmin = lssqfit(anewmin, anewmax, bnewmin, bnewmax, size)
         if newsmin < smin:
             a = newa; b = newb; smin = newsmin;
+    return a, b
  
 #Function which returns S for given values of a and b           
 def lssqeval(a, b):
@@ -154,9 +155,12 @@ def lssqeval(a, b):
 #lssqeval(3.5, (-7/220))      
 #recursive(0, 5, -1, 0, 30, 300)
 
+def func(x, a, b):
+    return np.exp(a * x + b)
 
 #Function which uses existing Python library functions to perform a least squares fit
 def existingfunctions():
+    #inbuilt linear regression
     datax = np.array((5,15,25,35,45,55,65,75,85,95,105,115))
     datay = np.array((32,17,21,7,8,6,5,3,4,1,5,1))
     datalogy = np.zeros((len(datay)))
@@ -166,10 +170,64 @@ def existingfunctions():
     print(numpypolyfit)
     lssqeval(numpypolyfit[1], numpypolyfit[0])
     
-existingfunctions()
+    #inbuilt non-linear best fit
+    x0 = np.array([-7.0/220, 3.5])
+    nonlinfit = opt.curve_fit(func, datax, datay, x0)
+    fitparams = nonlinfit[0]
+    print(fitparams)
+    lssqeval(fitparams[1], fitparams[0])
+    return numpypolyfit, fitparams
+
+def fitplotting(amininit, amaxinit, bmininit, bmaxinit, maxrec, initsize):
+    datax = np.array((5,15,25,35,45,55,65,75,85,95,105,115))
+    datay = np.array((32,17,21,7,8,6,5,3,4,1,5,1))
+    myleastsqfit = recursive(amininit, amaxinit, bmininit, bmaxinit, maxrec, initsize)
+    numpypolyfit, scipypolyfit = existingfunctions()
+    approxlinex = np.linspace(0, 120, 121)
+    myapproxliney = np.zeros(len(approxlinex))
+    numpyapproxliney = np.zeros(len(approxlinex))
+    scipyapproxliney = np.zeros(len(approxlinex))
+    for i in range(len(approxlinex)):
+        myapproxliney[i] = np.exp(myleastsqfit[0] + myleastsqfit[1] * approxlinex[i])
+    for i in range(len(approxlinex)):
+        numpyapproxliney[i] = np.exp(numpypolyfit[1] + numpypolyfit[0] * approxlinex[i])
+    for i in range(len(approxlinex)):
+        scipyapproxliney[i] = np.exp(scipypolyfit[1] + scipypolyfit[0] * approxlinex[i])
+    plt.figure()
+    plt.plot(datax, datay, 'b.', label = 'Data')
+    plt.plot(approxlinex, myapproxliney, 'r', label = 'My Functions Fit')
+    plt.plot(approxlinex, numpyapproxliney, 'g', label = 'Numpy Fit')
+    plt.plot(approxlinex, scipyapproxliney, 'k', label = 'Scipy Fit')
+    plt.xlabel('Time')
+    plt.ylabel('Decays')
+    plt.title('Data with Calculated Fit Lines')
+    plt.legend(loc = 'upper right')
+    plt.show()
+
+#Plots exponential curve based on eye fit parameters
+def plotexpfit():
+    datax = np.array((5,15,25,35,45,55,65,75,85,95,105,115))
+    datay = np.array((32,17,21,7,8,6,5,3,4,1,5,1))
+    approxlinex = np.linspace(0, 120, 121)
+    approxliney = np.zeros(len(approxlinex))
+    for i in range(len(approxlinex)):
+        approxliney[i] = np.exp(3.5 + (-7.0/220) * approxlinex[i])
+    plt.figure(0)
+    plt.plot(datax, datay, 'b.', label = 'Data')
+    plt.plot(approxlinex, approxliney, 'r', label = 'Estimated Fit')
+    plt.xlabel('Time')
+    plt.ylabel('Decays')
+    plt.title('Data with Eye Estimated Fit')
+    plt.legend(loc = 3)
+    plt.show()
+
+fitplotting(0, 5, -1, 0, 30, 300)
+#plotexpfit()
+
+    
 
 
-print("Stephen O'Shea - JSTP - SN: 13321762")
+print("Stephen O'Shea - JSPY - SN: 13321762")
         
 
 

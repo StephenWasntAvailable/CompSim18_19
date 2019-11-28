@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Sep 18 11:23:33 2018
-
 @author: Stephen
 """
 
@@ -45,7 +43,7 @@ def ord2diffcosx(x):
 #Creating an array of the x values the approximation will be evaluated at,
 #in the range -4pi to 4pi, i.e 4 periods of cos(x)
 def createarrays(x):
-    xvalues = np.linspace(-4 * math.pi, 4 * math.pi, x)
+    xvalues = np.linspace(0, 4 * math.pi, x)
     numpoints = len(xvalues)
     return xvalues, numpoints
     
@@ -222,10 +220,10 @@ def machprectest(x, maxj):
             StandardPlots(xaxis, yapprox1, relerror1)
 
 #Calling the functions            
-main(200, 10000)      #
+#main(200, 10000)      #
 subcancelchecklower()
 subcancelcheckupper()
-machprectest(100, 10)
+#machprectest(100, 10)
 
 
     

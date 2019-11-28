@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Sep 22 12:25:11 2018
-
 @author: Stephen
 """
 
@@ -152,6 +150,7 @@ def rounding(x, k, lmax):
     print(s2)
     print(s3)
     
+
 
 varyivaryh(2, 10, 400)
 rounding(2, 5, 322)
