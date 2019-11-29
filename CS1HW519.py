@@ -4,10 +4,13 @@ Created on Wed Nov 27 15:13:06 2019
 
 @author: soshe
 """
+print("Stephen O'Shea - JSPY")
+print("SN : 13321762")
+
 import numpy as np
 import matplotlib.pyplot as plt
 import random
-import collections as col
+
 
 
 def factorial(n):
@@ -19,15 +22,31 @@ def factorial(n):
 def poisson(avnval, n):
     return (avnval ** n) * np.exp(-avnval) / factorial(n)
 
-def plot_poisson(avnval):
+def calc_poisson_array(avnval):
     nvalues = np.linspace(0, 50, 51)
     poissonarray = np.zeros(len(nvalues))
     for i in range(len(nvalues)-1):
         poissonarray[i] = poisson(avnval, nvalues[i])
+    return poissonarray
+
+def plot_poisson(avnvalues):
+    nvalues = np.linspace(0, 50, 51)
+    colours = ['blue' , 'green', 'red', 'cyan', 'magenta']
+    j = 0
     plt.figure()
-    plt.plot(nvalues, poissonarray, 'r')
+    for i in avnvalues:
+        temp_array = calc_poisson_array(i)
+        plt.plot(nvalues, temp_array, label = "<n> = %d" %i, color = colours[j], marker = '.', lw = 0)
+        j += 1
+    plt.xlabel('n')
+    plt.ylabel('P(n)')
+    plt.title('Poisson Distributions for differing average n <n>')
+    plt.legend(loc = 'upper right')
     plt.show()
-    
+        
+plot_poisson([1, 5, 10, 15, 20])      
+        
+ 
 def compute_sum_poisson(avnval):
     nvalues = np.linspace(0, 50, 51)
     poissonarray = np.zeros(len(nvalues))
@@ -46,7 +65,7 @@ def compute_sum_nsq_poisson(avnval):
     nvalues = np.linspace(0, 50, 51)
     poissonarray = np.zeros(len(nvalues))
     for i in range(len(nvalues)-1):
-        poissonarray[i] = poisson(avnval, nvalues[i]) * nvalues[i] * nvalues[i]
+        poissonarray[i] = poisson(avnval, nvalues[i]) * (nvalues[i] ** 2)
     return np.sum(poissonarray)
         
 def print_sums():
@@ -62,7 +81,7 @@ def print_sums():
         s3 = "The value of the sum n^2P(n) is %f" %x3
         print(s3)
 
-#print_sums()
+print_sums()
 
 def dartboard_sizel_dartsn(l, n):
     hits_array = np.zeros(l)
@@ -100,23 +119,31 @@ def multiple_trials_dartboard(ntrials, l, n):
     hn = np.zeros(max_length)
     for i in range(0, max_length):
         for j in range(0, len(hns)):
-            hn[i] += hns[j][i]
+            hn[i] += boundary(hns, i, j)
     print(hn)
     total_throws = np.sum(np.sum(hns))
     print(total_throws)
     pn = np.zeros(max_length)
     for i in range(0, max_length):
         pn[i] = hn[i] / total_throws
-    print(pn)
+    print("Probabilities: ", pn)
     average_hits_per_site = 0
     for i in range(0, max_length - 1):
         average_hits_per_site += hn[i] * i
     average_hits_per_site = average_hits_per_site / total_throws
-    print(average_hits_per_site)
+    print("Average hits per site: %f" %average_hits_per_site)
     pn_theoretical = np.zeros(max_length)
-    for i in range(0, max_length - 1):
+    for i in range(0, max_length):
         pn_theoretical[i] = poisson(average_hits_per_site, i)
-    print(pn_theoretical)
+    print("Probabilities from Poisson Distribution: ", pn_theoretical)
     
-        
-multiple_trials_dartboard(5, 100, 50) 
+def boundary(hns, i, j):
+    if (j >= len(hns)):
+        return 0
+    elif (i >= len(hns[j])):
+        return 0
+    else:
+        return hns[j][i]
+    
+     
+multiple_trials_dartboard(10, 100, 50) 
