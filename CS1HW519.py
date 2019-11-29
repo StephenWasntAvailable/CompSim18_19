@@ -108,5 +108,15 @@ def multiple_trials_dartboard(ntrials, l, n):
     for i in range(0, max_length):
         pn[i] = hn[i] / total_throws
     print(pn)
+    average_hits_per_site = 0
+    for i in range(0, max_length - 1):
+        average_hits_per_site += hn[i] * i
+    average_hits_per_site = average_hits_per_site / total_throws
+    print(average_hits_per_site)
+    pn_theoretical = np.zeros(max_length)
+    for i in range(0, max_length - 1):
+        pn_theoretical[i] = poisson(average_hits_per_site, i)
+    print(pn_theoretical)
+    
         
 multiple_trials_dartboard(5, 100, 50) 
